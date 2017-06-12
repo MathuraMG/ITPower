@@ -1,80 +1,20 @@
-/*
-	HTTP/HTTPS request example to Enertiv
-  Does basic Oauth2 exchange to get access token
-  then makes first API request with the token.
-  This is a quick-and-dirty solution, and should be improved upon.
-  You'll need to add a file, cred.js, to the same directory as this file,
-  with the following in it:
-  var creds = {
-      username : your_username,
-      password : your_password,
-      clientID : your_client_id,
-      clientSecret : your_client_secret
-  }
-  module.exports = creds;
-  to call it from the command line:
-  node client.js
-  TODO:
-    * Simplify with async.js or q.js or an oauth2 library
-	created 25 Feb 2015
-  updated 20 Nov 2015
-	by Tom Igoe
-*/
-
-
-var https = require('https');
 var querystring = require('querystring');
+var https = require('https');
 
-var express = require('express'); // include the express library
-var server = express();           // create a server using express
-var message = "Hello Client!"
-
-// start the server:
-server.listen(8080);
-
-server.use('/', express.static('public'));   // set a static file directory
-
-function handleRequest(request, response) {
-  response.send(message);         // send message to the client
-  response.end();                 // close the connection
-}
-
-// define what to do when the client requests something:
-server.get('/data', handleRequest);         // GET request
-
-/*
-
- set up the options for the login.
- fill in your client_id and client_secret here:
-
- ---
-
- var loginData = querystring.stringify({
- 	'client_id': process.env.ENERTIV_CLIENT_ID,
- 	'client_secret': process.env.ENERTIV_CLIENT_SECRET,
- 	'grant_type': 'password',
- 	'username': process.env.ENERTIV_USERNAME,
- 	'password': process.env.ENERTIV_PASSWORD,
- });
-
-*/
-
-/* To make it simple, we will add the credentials here for now */
-
-var clientData;
 
 var loginData = querystring.stringify({
-	'client_id':'',
-	'client_secret': '',
+	'client_id':'c99b7f5dec0d6a0f6178',
+	'client_secret': '575af139440e5ae453d6171d14efd8ce3a4f3005',
 	'grant_type': 'password',
-	'username': '',
-	'password': '',
+	'username': 'mmg542@nyu.edu',
+	'password': 'energyatitp',
+})
 
-});
+console.log(loginData);
 
 // set up the HTTPS request options. You'll modify and
 // reuse this for subsequent calls:
-var httpsRequestOptions = {
+var loginRequestOptions = {
   rejectUnauthorized: false,
   method: 'POST',
   host: 'api.enertiv.com',
@@ -85,6 +25,27 @@ var httpsRequestOptions = {
     'Content-Length': loginData.length
   }
 };
+
+var dataRequestOptions = {
+  rejectUnauthorized: false,
+  method: 'GET',
+  host: 'api.enertiv.com',
+  port: 443,
+  path: '/o/token/',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Content-Length': loginData.length
+  }
+};
+
+console.log(loginRequestOptions);
+
+setInterval(function() {
+  var request = https.request(loginRequestOptions, saveToken);	// start it
+  request.write(loginData);                       // add  body of  POST request
+  request.end();
+  console.log('Hello');
+}, 10000);
 
 var accessToken;
 function saveToken(response) {
@@ -98,10 +59,7 @@ function saveToken(response) {
   response.on('end', function () {
     result = JSON.parse(result);
     accessToken = result.access_token;
-		// getInfo('/api/client/', accessToken);
 
-    // construct url
-    // get the data of one equipment for the last 3 minutes
     var toTime = new Date();
     toTime.setHours(toTime.getHours());
     var fromTime = new Date(toTime);
@@ -117,27 +75,19 @@ function saveToken(response) {
     toTime.toISOString() +
     '&interval=min';
 
-		getInfo(url, accessToken);
-		console.log(result);
-
-    // reset httpsRequestOptions
-    httpsRequestOptions.path = '/o/token/';
-    httpsRequestOptions.method = 'POST';
-    httpsRequestOptions.headers = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Content-Length': loginData.length
-    }
+    getClientInfo(url, accessToken);
+    console.log(result);
   });
 }
 
+var clientData;
 
-function getInfo(path, token) {
-  httpsRequestOptions.path = path;
-  httpsRequestOptions.method = 'GET';
-  httpsRequestOptions.headers = {
+function getClientInfo(path, token) {
+  dataRequestOptions.path = path;
+  dataRequestOptions.headers = {
     'Authorization': 'Bearer ' + token
   }
-  request = https.get(httpsRequestOptions, function (response) { // make the API call
+  request = https.get(dataRequestOptions, function (response) { // make the API call
     var result = '';
     // as each chunk comes in, add it to the result string:
     response.on('data', function (data) {
@@ -150,19 +100,9 @@ function getInfo(path, token) {
       clientData = result;
       console.log('****************');
       console.log(clientData);
-      // update message
-      message = clientData;
       console.log('****************');
       console.log(accessToken);
       console.log('****************');
     });
   });
 }
-
-// make the login request evey 10 sec:
-setInterval(function() {
-  var request = https.request(httpsRequestOptions, saveToken);	// start it
-  request.write(loginData);                       // add  body of  POST request
-  request.end();
-  console.log('Hello');
-}, 10000);
