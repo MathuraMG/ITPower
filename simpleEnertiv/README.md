@@ -9,55 +9,45 @@
 
 ## How to install Node
 
-## Summary of steps
+## Steps
 
-* Get a clientID that will help us access the data on the enertiv server - [sample details](https://api.enertiv.com/o/applications/)
-* Use the login details to create a string to send to the server
+### 1) Create HTTP Request to get access server
+
+* Our first step here is to get credentials to access the server.
+* We have some [sample details](https://api.enertiv.com/o/applications/) that you can use
+* Replace the login details that you get here in the code below.
+* Type the below code in `client.js`
+
 
 ```javascript
 
-var querystring = require('querystring');
-/*
-
- set up the options for the login.
- fill in your client_id and client_secret here:
-
- ---
-
- var loginData = querystring.stringify({
- 	'client_id': process.env.ENERTIV_CLIENT_ID,
- 	'client_secret': process.env.ENERTIV_CLIENT_SECRET,
- 	'grant_type': 'password',
- 	'username': process.env.ENERTIV_USERNAME,
- 	'password': process.env.ENERTIV_PASSWORD,
- });
-
-*/
-
-/* To make it simple, we will add the credentials here for now */
-
-
-
 var loginData = querystring.stringify({
-	'client_id':'',
-	'client_secret': '',
+	'client_id':'abcd',
+	'client_secret': '1234abcd',
 	'grant_type': 'password',
-	'username': '',
-	'password': '',
-
+	'username': 'itpower',
+	'password': 'itpower123',
 })
 
+console.log(loginData);
+
 ```
 
-* Before logging in, we would need to set up the HTTP request options so that it knows what it is receiving. (Add the below snippet)
+* Now run the script with `node client.js`, you should see the following output
+
+```
+client_id=abcd&client_secret=1234abcd&grant_type=password&username=itpower&password=itpower123
+
+```
+
+* We also need to setup HTTP request options so that the server knows the details of the request it is receiving.
+(Add the below snippet in `client.js`)
 
 ```javascript
 
-var https = require('https');
-
 // set up the HTTPS request options. You'll modify and
 // reuse this for subsequent calls:
-var httpsRequestOptions = {
+var loginRequestOptions = {
   rejectUnauthorized: false,
   method: 'POST',
   host: 'api.enertiv.com',
@@ -69,16 +59,51 @@ var httpsRequestOptions = {
   }
 };
 
+console.log(loginRequestOptions);
+
+```
+* Now run the script with `node client.js`, you should see the following output
+
 ```
 
-* Now let's add the function to login and save the accessToken (Add the below snippet)
+{ rejectUnauthorized: false,
+  method: 'POST',
+  host: 'api.enertiv.com',
+  port: 443,
+  path: '/o/token/',
+  headers:
+   { 'Content-Type': 'application/x-www-form-urlencoded',
+     'Content-Length': 94 } }
+
+```
+* We have created **loginData** which contains then login credentials and **loginRequestOptions** that has the details of the request.
+* Now to make the actual HTTP request
+* This function **https.request** takes the *httpsRequestOptions** as a parameter along with a callback function. For now, all our callback does is say wether the request went through or not. (Paste the below snippet in `client.js`)
+* *Note: if the request was successful it will give us the response, 200*
 
 ```javascript
-/*
-	the callback function to be run when the response comes in.
-	this callback assumes a chunked response, with several 'data'
-	events and one final 'end' response.
-*/
+
+var request = https.request(
+  loginRequestOptions, function(response){
+    console.log("Response is : " + response.statusCode)
+  });	// start it
+request.write(loginData); // add  body of  POST request
+request.end();
+
+```
+
+* Run `node client.js` You should see the below output
+
+```
+Response is : 200
+```
+
+* When we create a successful request to the server now, it will give us an access token. This is a token that says that we have the right access required to get data from the server.
+* Therefore, once we successfully get access, we will save this token locally using the function **saveToken**( add the function below to `client.js`)
+
+
+```javascript
+
 var accessToken;
 function saveToken(response) {
   var result = '';		// string to hold the response
@@ -96,56 +121,45 @@ function saveToken(response) {
 }
 ```
 
-* Now to make the actual HTTP request
+* Also, change the callback in https.request function to saveToken. It should look like this
 
 ```javascript
 
-// make the login request:
-var request = https.request(httpsRequestOptions, saveToken);	// start it
-request.write(loginData);                       // add  body of  POST request
-request.end();
+var request = https.request(loginRequestOptions, saveToken);	s
 
 ```
 
-* ### **TESTING TIME!** ( Your code should now be looking something like this)
+* Run `node client.js` and you should see the below output
+
+```
+{ scope: 'read write',
+  expires_in: 36000,
+  access_token: 'hkW1czbvAnXgTxvYAK6uv4a0KoacwU',
+  refresh_token: 'ZnMNwqz7Bg5mHJ5jrLYtxUV2AOSOeQ',
+  token_type: 'Bearer' }
+```
+
+
+* ### **Checkpoint 1** ( Your code should now be looking something like this)
 
 ```javascript
-
-var https = require('https');
 var querystring = require('querystring');
-/*
-
- set up the options for the login.
- fill in your client_id and client_secret here:
-
- ---
-
- var loginData = querystring.stringify({
- 	'client_id': process.env.ENERTIV_CLIENT_ID,
- 	'client_secret': process.env.ENERTIV_CLIENT_SECRET,
- 	'grant_type': 'password',
- 	'username': process.env.ENERTIV_USERNAME,
- 	'password': process.env.ENERTIV_PASSWORD,
- });
-
-*/
-
-/* To make it simple, we will add the credentials here for now */
-
+var https = require('https');
 
 
 var loginData = querystring.stringify({
-	'client_id':'',
-	'client_secret': '',
+	'client_id':'c99b7f5dec0d6a0f6178',
+	'client_secret': '575af139440e5ae453d6171d14efd8ce3a4f3005',
 	'grant_type': 'password',
-	'username': '',
-	'password': '',
+	'username': 'mmg542@nyu.edu',
+	'password': 'energyatitp',
+})
 
-});
+console.log(loginData);
 
 // set up the HTTPS request options. You'll modify and
 // reuse this for subsequent calls:
-var httpsRequestOptions = {
+var loginRequestOptions = {
   rejectUnauthorized: false,
   method: 'POST',
   host: 'api.enertiv.com',
@@ -156,6 +170,12 @@ var httpsRequestOptions = {
     'Content-Length': loginData.length
   }
 };
+
+console.log(loginRequestOptions);
+
+var request = https.request(loginRequestOptions, saveToken);	// start it
+request.write(loginData); // add  body of  POST request
+request.end();
 
 var accessToken;
 function saveToken(response) {
@@ -173,38 +193,56 @@ function saveToken(response) {
   });
 }
 
-// make the login request:
-var request = https.request(httpsRequestOptions, saveToken);	// start it
-request.write(loginData);                       // add  body of  POST request
-request.end();
-
 
 ```
 
-* Now run ``` node client.js ```
-You should something similar
-```
-172-16-217-33:simpleEnertiv kanini$ node client.js
-{ scope: 'read write',
-  expires_in: 36000,
-  token_type: 'Bearer',
-  access_token: '5FYNhv3753GqVJXBNuhPdNxeDAPLhW',
-  refresh_token: 'ANAmdXOKxlSNWPxn0VfamT7mPXNihD' }
-```
+###2) Get Data from the server
 
-* Once this is done, now we can get some data from the server. Let's create a function to request for the client information. We need to change the HTTP options here.
+* Now that we are able to access the server,let's get some data from the server.
+* We need to create a new set of options for the second request.
+* Add this code snippet in `client.js` after **loginRequestOptions** is declared.
+
+```javascript
+// this is already in client.js
+var loginRequestOptions = {
+  rejectUnauthorized: false,
+  method: 'POST',
+  host: 'api.enertiv.com',
+  port: 443,
+  path: '/o/token/',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Content-Length': loginData.length
+  }
+};
+
+// Add the new options here
+var dataRequestOptions = {
+  rejectUnauthorized: false,
+  method: 'GET',
+  host: 'api.enertiv.com',
+  port: 443,
+  path: '/o/token/',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Content-Length': loginData.length
+  }
+};
+
+```
+* Let's create a function to request for the client information (that is, information of who YOU are).
+* We will create a function called **getClientInfo(path,token)** This function takes parameters **path** (the endpoint that you are trying to get data from) and **token** (this is the access token that the server gave us when we logged in).
+* Add this to the bottom of `client.js`
 
 ```javascript
 var clientData;
 
-
 function getClientInfo(path, token) {
-  httpsRequestOptions.path = path;
-  httpsRequestOptions.method = 'GET';
-  httpsRequestOptions.headers = {
+  dataRequestOptions.path = path;
+  dataRequestOptions.headers = {
     'Authorization': 'Bearer ' + token
   }
-  request = https.get(httpsRequestOptions, function (response) { // make the API call
+  request = https.get(dataRequestOptions, function (response) { // make the API call
     var result = '';
     // as each chunk comes in, add it to the result string:
     response.on('data', function (data) {
@@ -225,11 +263,20 @@ function getClientInfo(path, token) {
 }
 ```
 
-* Now let's call that function once we save the access token.
-(change saveToken function like below)
+* Now let's change the code so that instead of showing us our accessToken, the **saveToken** function will use the accessToken to get the client information.
+* Add the below line in `client.js` in the **saveToken** function after defining the **accessToken**
 
 ```javascript
 
+		getClientInfo('/api/client/', accessToken);
+
+```
+
+* the endpoint `/api/client/` can be found in the list of [defined enertiv endpoints](https://api.enertiv.com/docs/)
+
+* That is, the saveToken function should now look like this
+
+```javascript
 function saveToken(response) {
   var result = '';		// string to hold the response
   // as each chunk comes in, add it to the result string:
@@ -241,17 +288,14 @@ function saveToken(response) {
   response.on('end', function () {
     result = JSON.parse(result);
     accessToken = result.access_token;
-		getClientInfo('/api/client/', accessToken);
-		console.log(result);
+    getClientInfo('/api/client/', accessToken);
+    console.log(result);
   });
 }
-
 ```
 
-But wait - how did we know to put in ```api/client``` ? Here is a list of [available endpoints](https://api.enertiv.com/docs/). Bookmark it. Now.
 
-* Test again! Yay!
-you should get something like this
+* Test again by running `node client.js`, you should get something like this
 
 ```
 
@@ -284,59 +328,39 @@ you should get something like this
 
 ```
 
-* Ok, let's cheat a bit. Now we have the ```location_id``` from our previous output. Let's use this along with [this endpoint](https://api.enertiv.com/docs/#!/location/location_read) to pass a different path to ```getClientInfo```
-so replace
+* Let us now change the endpoint to try and get some different data.
+* There is an endpoint that will give us information about the location where we are running the enertiv system (in this case, ITP). [endpoint](https://api.enertiv.com/docs/#!/location/location_read)
+This endpoint requires a `location_id` which we got in our previous response.
+* So, let us change the **getClientInfo** function parameters to look like this -
 
-```javascript
-getClientInfo('/api/client/', accessToken);
-```
-
-with this
 ```javascript
 // getClientInfo('/api/client/', accessToken);
 getClientInfo('/api/location/5ae33444-387d-46f6-9be0-3c4b54f53561/', accessToken);
 ```
 
-Maybe we should change it to ```getInfo```?
-So here is the ### COMPLETE CODE
+* run `node client.js` and you will get a complete list of all the sublocations in ITP.
+
+* ### **Checkpoint 2** ( Your code should now be looking something like this)
 
 ``` javascript
 
-var https = require('https');
 var querystring = require('querystring');
-/*
+var https = require('https');
 
- set up the options for the login.
- fill in your client_id and client_secret here:
-
- ---
-
- var loginData = querystring.stringify({
- 	'client_id': process.env.ENERTIV_CLIENT_ID,
- 	'client_secret': process.env.ENERTIV_CLIENT_SECRET,
- 	'grant_type': 'password',
- 	'username': process.env.ENERTIV_USERNAME,
- 	'password': process.env.ENERTIV_PASSWORD,
- });
-
-*/
-
-/* To make it simple, we will add the credentials here for now */
-
-var clientData;
 
 var loginData = querystring.stringify({
-	'client_id':'',
-	'client_secret': '',
+	'client_id':'c99b7f5dec0d6a0f6178',
+	'client_secret': '575af139440e5ae453d6171d14efd8ce3a4f3005',
 	'grant_type': 'password',
-	'username': '',
-	'password': '',
+	'username': 'mmg542@nyu.edu',
+	'password': 'energyatitp',
+})
 
-});
+console.log(loginData);
 
 // set up the HTTPS request options. You'll modify and
 // reuse this for subsequent calls:
-var httpsRequestOptions = {
+var loginRequestOptions = {
   rejectUnauthorized: false,
   method: 'POST',
   host: 'api.enertiv.com',
@@ -347,6 +371,24 @@ var httpsRequestOptions = {
     'Content-Length': loginData.length
   }
 };
+
+var dataRequestOptions = {
+  rejectUnauthorized: false,
+  method: 'GET',
+  host: 'api.enertiv.com',
+  port: 443,
+  path: '/o/token/',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Content-Length': loginData.length
+  }
+};
+
+console.log(loginRequestOptions);
+
+var request = https.request(loginRequestOptions, saveToken);	// start it
+request.write(loginData); // add  body of  POST request
+request.end();
 
 var accessToken;
 function saveToken(response) {
@@ -360,20 +402,19 @@ function saveToken(response) {
   response.on('end', function () {
     result = JSON.parse(result);
     accessToken = result.access_token;
-		// getInfo('/api/client/', accessToken);
-		getInfo('/api/location/5ae33444-387d-46f6-9be0-3c4b54f53561/', accessToken);
-		console.log(result);
+    getClientInfo('/api/location/5ae33444-387d-46f6-9be0-3c4b54f53561/', accessToken);
+    console.log(result);
   });
 }
 
+var clientData;
 
-function getInfo(path, token) {
-  httpsRequestOptions.path = path;
-  httpsRequestOptions.method = 'GET';
-  httpsRequestOptions.headers = {
+function getClientInfo(path, token) {
+  dataRequestOptions.path = path;
+  dataRequestOptions.headers = {
     'Authorization': 'Bearer ' + token
   }
-  request = https.get(httpsRequestOptions, function (response) { // make the API call
+  request = https.get(dataRequestOptions, function (response) { // make the API call
     var result = '';
     // as each chunk comes in, add it to the result string:
     response.on('data', function (data) {
@@ -392,28 +433,21 @@ function getInfo(path, token) {
     });
   });
 }
-
-// make the login request:
-var request = https.request(httpsRequestOptions, saveToken);	// start it
-request.write(loginData);                       // add  body of  POST request
-request.end();
-
 ```
-* We can also choose one equipment, and get its data in real time
 
-first, we get one equipment id, construct the `url` for https request, make the https request, and in the end, reset the `httpsRequestOptions`.
+###3) Getting realtime data
+
+* We can also choose one equipment on the floor, and get its power consumption data in real time
+
+* To do this, we will use the following [endpoint](https://api.enertiv.com/docs/#!/equipment/equipment_data_list)
+* This endpoint requires us to pass the equipment id, along with start and end time. It also requires the time interval of data required.
+* Let us try and get the data for the first minute in 2017. Replace the getClientInfo function call with the below code in `client.js`
 
 ```javascript
     // construct url
-    // get the data of one equipment for the last 3 minutes
-    var toTime = new Date();
-    toTime.setHours(toTime.getHours());
-    var fromTime = new Date(toTime);
 
-    var durationInMinutes = 3;
-    console.log(toTime);
-    console.log(fromTime);
-    fromTime.setMinutes(toTime.getMinutes() - durationInMinutes);
+    var fromTime = new Date('01/01/2017T00:00:00Z');
+    var toTime = new Date('01/01/2017T00:02:00Z');
 
     var url = '/api/equipment/a40be1ed-5a9d-4b35-b500-0aff698e8c79/data/?fromTime=' +
     fromTime.toISOString() +
@@ -421,19 +455,74 @@ first, we get one equipment id, construct the `url` for https request, make the 
     toTime.toISOString() +
     '&interval=min';
 
-    getInfo(url, accessToken);
-    console.log(result);
+    getClientInfo(url, accessToken);
 
-    // reset httpsRequestOptions
-    httpsRequestOptions.path = '/o/token/';
-    httpsRequestOptions.method = 'POST';
-    httpsRequestOptions.headers = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Content-Length': loginData.length
-    }
-    
+```
+* Run `node client.js` and you should see the below
+
+```
+{ units: 'kW',
+  names: [ 'HVAC Motor, Signaling Device 2' ],
+  data:
+   [ { x: '2017-01-01T00:00:00Z',
+       'HVAC Motor, Signaling Device 2': 0 },
+     { x: '2017-01-01T00:01:00Z',
+       'HVAC Motor, Signaling Device 2': 0 } ] }
+
 ```
 
+* Now let us change the definition of **fromTime** and **toTime** so that it is the most recent minute.
+
+```javascript
+
+var toTime = new Date();
+toTime.setHours(toTime.getHours());
+var fromTime = new Date(toTime);
+
+var durationInMinutes = 3;
+console.log(toTime);
+console.log(fromTime);
+fromTime.setMinutes(toTime.getMinutes() - durationInMinutes);
+
+```
+
+* Run 'node client.js' again and you should see something similar the below -
+
+```
+
+{ units: 'kW',
+  names: [ 'HVAC Motor, Signaling Device 2' ],
+  data:
+   [ { x: '2017-06-12T00:18:00Z',
+       'HVAC Motor, Signaling Device 2': 3.2997 } ] }
+
+```
+
+* The last thing that we want to do is call the http request every 10s/30s so that we get a constant stream of realtime data
+* To do this, wrap the http request call in a setInterval function.
+* That is, replace the below code snippet...
+
+```javascript
+
+var request = https.request(loginRequestOptions, saveToken);	// start it
+request.write(loginData); // add  body of  POST request
+request.end();
+
+```
+
+with the below code snippet.
+
+```javascript
+setInterval(function() {
+  var request = https.request(httpsRequestOptions, saveToken);	// start it
+  request.write(loginData);                       // add  body of  POST request
+  request.end();
+  console.log('Hello');
+}, 10000);
+
+```
+
+* when you run `node client.js` now, you will see the data being sent every 10s/30s
 ## Express
 * How to install Express?
 `$ npm install express`
@@ -471,3 +560,9 @@ server.get('/data', handleRequest);         // GET request
 ## References
 * [enertiv bitbucket](https://bitbucket.org/enertiv/enertiv-client/)
 * [enertiv endpoints](https://api.enertiv.com/docs/)
+
+## Glossary
+* **Access Token** - An equivalent of a password given to us by the server. It gives us access to login to the server.
+* **HTTP Request**
+* **GET and POST Requests** -
+* **endpoints** - a unique URL that represents an object/data or collection of objects/data
