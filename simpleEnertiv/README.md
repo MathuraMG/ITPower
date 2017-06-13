@@ -450,7 +450,7 @@ function getClientInfo(path, token) {
     var toTime = new Date('01/01/2017T00:02:00Z');
 
     var url = '/api/equipment/a40be1ed-5a9d-4b35-b500-0aff698e8c79/data/?fromTime=' +
-    startTime.toISOString() +
+    fromTime.toISOString() +
     '&toTime=' +
     toTime.toISOString() +
     '&interval=min';
